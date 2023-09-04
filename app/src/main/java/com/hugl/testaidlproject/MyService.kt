@@ -62,7 +62,7 @@ class MyService : Service() {
     }
 
     override fun onBind(intent: Intent): IBinder {
-        Log.e("hgl","服务端连接")
+        Log.e("hgl","服务端连接---")
         return binder
     }
 

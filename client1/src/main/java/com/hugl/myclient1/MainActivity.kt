@@ -30,8 +30,16 @@ class MainActivity : AppCompatActivity() {
 
 
         binding.startService.setOnClickListener {
-            val intent = Intent("com.hugl.testaidlproject.IMyAidlInterface")
-            intent.setPackage("com.hugl.testaidlproject")
+//            val intent = Intent("com.hugl.testaidlproject.IMyAidlInterface")
+//            intent.setPackage("com.hugl.testaidlproject")
+//            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+
+            val intent = Intent()
+            intent.action = "com.hugl.testaidlproject.IMyAidlInterface"
+            //setClassName这种方式设置type可以绑定，如果是setPackage这种方式设置type不可绑定
+            //多客户端绑定服务端需要添加不同的type区分不同的intent
+            intent.setClassName("com.hugl.testaidlproject","com.hugl.testaidlproject.MyService")
+            intent.type = "child"
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
 

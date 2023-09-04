@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
+import android.os.IBinder.DeathRecipient
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.hugl.myclient.databinding.ActivityMainBinding
@@ -22,6 +23,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var iReceiveMsgListener: IReceiveMsgListener
 
+    private lateinit var deathRecipient: DeathRecipient
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,8 +33,14 @@ class MainActivity : AppCompatActivity() {
 
 
         binding.startService.setOnClickListener {
-            val intent = Intent("com.hugl.testaidlproject.IMyAidlInterface")
-            intent.setPackage("com.hugl.testaidlproject")
+//            val intent = Intent("com.hugl.testaidlproject.IMyAidlInterface")
+//            intent.setPackage("com.hugl.testaidlproject")
+            val intent = Intent()
+            intent.action = "com.hugl.testaidlproject.IMyAidlInterface"
+            //setClassName这种方式设置type可以绑定，如果是setPackage这种方式设置type不可绑定
+            //多客户端绑定服务端需要添加不同的type区分不同的intent
+            intent.setClassName("com.hugl.testaidlproject","com.hugl.testaidlproject.MyService")
+            intent.type = "father"
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
 
@@ -54,7 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.setMessage.setOnClickListener {
 //            iMyAidlInterface?.insert("哈哈，就是我的信息")
-            Log.e("hgl","客户端传递数据")
+//            Log.e("hgl","客户端传递数据")
         }
 
 
@@ -75,6 +84,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        deathRecipient = DeathRecipient {
+            //binder断开
+            iMyAidlInterface?.asBinder()?.unlinkToDeath(deathRecipient,0)
+            //重连
+//            val intent = Intent()
+//            intent.action = "com.hugl.testaidlproject.IMyAidlInterface"
+//            //setClassName这种方式设置type可以绑定，如果是setPackage这种方式设置type不可绑定
+//            //多客户端绑定服务端需要添加不同的type区分不同的intent
+//            intent.setClassName("com.hugl.testaidlproject","com.hugl.testaidlproject.MyService")
+//            intent.type = "father"
+//            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+
+        }
+
     }
 
 
@@ -82,7 +105,12 @@ class MainActivity : AppCompatActivity() {
 
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             iMyAidlInterface = IMyAidlInterface.Stub.asInterface(p1)
-            iMyAidlInterface?.registerReceiveListener(iReceiveMsgListener)
+            try {
+                iMyAidlInterface?.asBinder()?.linkToDeath(deathRecipient,0)
+                iMyAidlInterface?.registerReceiveListener(iReceiveMsgListener)
+            } catch (e: Exception) {
+                Log.e("hgl", "异常----")
+            }
         }
 
         override fun onServiceDisconnected(p0: ComponentName?) {
